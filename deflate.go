@@ -3,7 +3,6 @@ package deflate
 import (
 	"bytes"
 	"compress/flate"
-	"github.com/billcoding/calls"
 	c "github.com/billcoding/flygo/context"
 	"github.com/billcoding/flygo/middleware"
 	"github.com/billcoding/flygo/mime"
@@ -65,21 +64,21 @@ func (d *deflate) Handler() func(c *c.Context) {
 				if strings.Index(ct, ";") != -1 {
 					ct = strings.TrimSpace(strings.Split(ct, ";")[0])
 				}
-				calls.Empty(ct, func() {
+				if ct == "" {
 					ct = mime.BINARY
-				})
+				}
 				ctx.Header().Set("Vary", "Content-Encoding")
 				ctx.Header().Set("Content-Encoding", "deflate")
 				var buffers bytes.Buffer
 				fw, err := flate.NewWriter(&buffers, d.level)
 				defer fw.Close()
-				calls.NNil(err, func() {
+				if err != nil {
 					d.logger.Println(err)
-				})
+				}
 				_, werr := fw.Write(odata)
-				calls.NNil(werr, func() {
+				if werr != nil {
 					d.logger.Println(werr)
-				})
+				}
 				fw.Flush()
 				ctx.Write(buffers.Bytes())
 			}
